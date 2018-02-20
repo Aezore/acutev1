@@ -28,7 +28,7 @@ S4 = LOW_IMPEDANCE = (GPIO.HIGH, GPIO.HIGH)                 # 24R9 ohms
 
 MUX_OUTPUTS = (S1, S2, S3, S4)              # List of all 4 mux outputs
 MUX_PINS = (17, 4)                          # Raspberry GPIO Pin numbers
-MUX_PINS_IO = (GPIO.OUT, GPIO.OUT)
+MUX_PINS_IO = GPIO.OUT
 
 ADC_AUTORANGE_FLOOR = 3000
 ADC_AVG_SAMPLES = 10                        # Average number of adc sampling
@@ -68,7 +68,7 @@ def adc_init():
     try:
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(True)
-        GPIO.setup(MUX_PINS, *MUX_PINS_IO)  # Sets the pins 17 and 4 as OUTPUTS
+        GPIO.setup(MUX_PINS, MUX_PINS_IO)  # Sets the pins 17 and 4 as OUTPUTS
 
         logging.debug(DBG_ADC_INIT_OK)
     except ImportError:
