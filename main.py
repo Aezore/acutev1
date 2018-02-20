@@ -122,13 +122,16 @@ def adc_autorange():
         [STRING]    -- [THE RANGE IN "OHMS" OF SUCH VALUE]
     """
     for channel, autorange_scale in zip(MUX_OUTPUTS, RANGE_SCALE_LIST_STR):
-        buffered_adc_sample = adc_read_average()
+
+        try:
+            buffered_adc_sample = adc_read_average()
+        except OSError:
+            logging.debug(DBG_ADC_AUTORANGE_FAIL)
+
         if buffered_adc_sample < ADC_AUTORANGE_FLOOR:
             adc_set_range(output_channel=channel)
         else:
             return buffered_adc_sample, autorange_scale
-
-    logging.debug(DBG_ADC_AUTORANGE_FAIL)
 
 
 def adc_calibration():
@@ -158,7 +161,11 @@ def adc_resistor_read():
         [Tuple] -- [Resistor value and its scale]
     """
     adc_reset_range()
-    adc_sample_read, adc_sample_scale = adc_autorange()
+
+    try:
+        adc_sample_read, adc_sample_scale = adc_autorange()
+    except TypeError as err:
+        print("ERROR WHILE AUTORANGING: ".format(err))
 
     if adc_sample_read > VOLTAGE_ADC_CEILING and adc_sample_scale == HIGH_IMPEDANCE:
         logging.debug(DBG_OPEN_CIRCUIT)
