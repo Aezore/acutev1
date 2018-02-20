@@ -3,23 +3,23 @@
 # IMPORTS
 #########################################
 import logging
+
 try:
     import RPi.GPIO as GPIO
     from colorama import init, Fore, Style
     import Adafruit_ADS1x15
 except ImportError as err:
-    print('ERROR - Module not installed: '.format(err))
+    print("ERROR - Module not installed: ".format(err))
 
 logging.basicConfig(level=logging.DEBUG,
-                    format=Style.BRIGHT + '%(asctime)s - %(levelname)s - %(message)s' + Style.NORMAL)
-
-adc = Adafruit_ADS1x15.ADS1115()            # Creates the instance
+                    format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" + Style.NORMAL)
 
 
 #########################################
 # VARIABLES
 #########################################
 
+adc = None  # Initial ADC Object declaration
 
 S1 = RESET_MUX = HIGH_IMPEDANCE = (GPIO.LOW, GPIO.LOW)       # 249K ohms
 S2 = (GPIO.LOW, GPIO.HIGH)                  # 24k9 ohms
@@ -45,16 +45,19 @@ VOLTAGE_ADC_FLOOR = 400
 VOLTAGE_ADC_CEILING = 30400
 
 # DEBUG MESSAGES
-DBG_OPEN_CIRCUIT = Fore.LIGHTRED_EX + 'OPEN CIRCUIT!!' + Fore.RESET
-DBG_SHORT_CIRCUIT = Fore.LIGHTRED_EX + 'SHORT CIRCUIT!!' + Fore.RESET
-DBG_ADC_ERROR = Fore.LIGHTRED_EX + 'ERROR ADC INIT - NOT CONNECTED?' + Fore.RESET
-DBG_ADC_INIT_OK = Fore.LIGHTGREEN_EX + 'ADC Initialized OK.' + Fore.RESET
-DBG_ADC_MUX_RESET = Fore.LIGHTCYAN_EX + 'ADC Range MUX RESET.' + Fore.RESET
-DBG_ADC_AUTORANGE_FAIL = Fore.LIGHTRED_EX + 'ERROR -- AUTORANGE FAILED --' + Fore.RESET
+DBG_OPEN_CIRCUIT = Fore.LIGHTYELLOW_EX + "OPEN CIRCUIT!!" + Fore.RESET
+DBG_SHORT_CIRCUIT = Fore.LIGHTYELLOW_EX + "SHORT CIRCUIT!!" + Fore.RESET
+DBG_HW_INIT_OK = Fore.LIGHTGREEN_EX + "RPI HW Initialized OK." + Fore.RESET
+DBG_HW_INIT_ERR = Fore.LIGHTRED_EX + "ERROR Initializing RPi HW" + Fore.RESET
+DBG_ADC_INIT_OK = Fore.LIGHTGREEN_EX + "ADC Initialized OK." + Fore.RESET
+DBG_ADC_INIT_ERR = Fore.LIGHTRED_EX + "Can't create ADS1x15 instance object" + Fore.RESET
+DBG_ADC_ERROR = Fore.LIGHTRED_EX + "ERROR ADC INIT - NOT CONNECTED?" + Fore.RESET
+DBG_ADC_MUX_RESET = Fore.LIGHTCYAN_EX + "ADC Range MUX RESET." + Fore.RESET
+DBG_ADC_AUTORANGE_FAIL = Fore.LIGHTRED_EX + "ERROR -- AUTORANGE FAILED --" + Fore.RESET
 
-DBG_ADC_RANGE = 'ADC RANGE MUX CHANNEL SET TO {}' + Fore.RESET
-DBG_ADC_AVG = 'ADC AVG READING: {}' + Fore.RESET
-DBG_ADC_VOLT_RESISTOR = 'Voltage/Resistor - ADCSAMPLE: {}, RESISTOR: {}' + Fore.RESET
+DBG_ADC_RANGE = "ADC RANGE MUX CHANNEL SET TO {}" + Fore.RESET
+DBG_ADC_AVG = "ADC AVG READING: {}" + Fore.RESET
+DBG_ADC_VOLT_RESISTOR = "Voltage/Resistor - ADCSAMPLE: {}, RESISTOR: {}" + Fore.RESET
 
 
 #########################################
@@ -62,17 +65,23 @@ DBG_ADC_VOLT_RESISTOR = 'Voltage/Resistor - ADCSAMPLE: {}, RESISTOR: {}' + Fore.
 #########################################
 
 
-def adc_init():
-    """[Initializes the ADC settings and mode]
-    """
+def raspi_init():
+    """[Initializes the ADC settings and mode]"""
     try:
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(True)
         GPIO.setup(MUX_PINS, MUX_PINS_IO)  # Sets the pins 17 and 4 as OUTPUTS
 
-        logging.debug(DBG_ADC_INIT_OK)
+        logging.debug(DBG_HW_INIT_OK)
     except OSError:
         logging.debug(DBG_ADC_ERROR)
+
+    global adc
+    try:
+        adc = Adafruit_ADS1x15.ADS1115()  # Creates the object instance for the ADS1115
+        logging.debug(DBG_ADC_INIT_OK)
+    except Exception:
+        logging.debug(DBG_ADC_INIT_ERR)
 
 
 def adc_set_range(output_channel):
@@ -105,7 +114,7 @@ def adc_read_average():
         try:
             adc_values_list[each] = adc.read_adc(0, gain=ADC_GAIN)
         except OSError:
-            print(DBG_ADC_ERROR)
+            logging.debug(DBG_ADC_ERROR)
 
     reading = sum(adc_values_list) / len(adc_values_list)
 
@@ -158,37 +167,37 @@ def adc_resistor_read():
     """[Reads ADC channel, with autoranging and returns a value in ohms and scale]
 
     Returns:
-        [Tuple] -- [Resistor value and its scale]
+        [LIST] -- [Resistor value and its scale]
     """
     adc_reset_range()
 
     try:
         adc_sample_read, adc_sample_scale = adc_autorange()
-    except TypeError as err:
-        print("ERROR WHILE AUTORANGING: ".format(err))
 
-    if adc_sample_read > VOLTAGE_ADC_CEILING and adc_sample_scale == HIGH_IMPEDANCE:
-        logging.debug(DBG_OPEN_CIRCUIT)
-        return DBG_OPEN_CIRCUIT
-    elif adc_sample_read < VOLTAGE_ADC_FLOOR and adc_sample_scale == LOW_IMPEDANCE:
-        logging.debug(DBG_SHORT_CIRCUIT)
-        return DBG_SHORT_CIRCUIT
-    else:
-        resistor_value = adc_voltage_conversion(sample=adc_sample_read)
-        return resistor_value, adc_sample_scale
+        if adc_sample_read > VOLTAGE_ADC_CEILING and adc_sample_scale == HIGH_IMPEDANCE:
+            logging.debug(DBG_OPEN_CIRCUIT)
+            return DBG_OPEN_CIRCUIT
+        elif adc_sample_read < VOLTAGE_ADC_FLOOR and adc_sample_scale == LOW_IMPEDANCE:
+            logging.debug(DBG_SHORT_CIRCUIT)
+            return DBG_SHORT_CIRCUIT
+        else:
+            resistor_value = adc_voltage_conversion(sample=adc_sample_read)
+            return [resistor_value, adc_sample_scale]
+    except TypeError as err:
+        print(DBG_ADC_AUTORANGE_FAIL.format(err))
 
 
 def main():
     """[Main entry point]"""
-    logging.debug('Main Entry Point')
-    adc_init()
+    logging.debug("Main Entry Point")
+    raspi_init()
     init()  # Colorama init
 
     while True:
-        read_pin, scale = adc_resistor_read()
-        print(read_pin, scale)
+        read_pin = adc_resistor_read()
+        print(read_pin)
         input()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
