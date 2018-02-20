@@ -68,7 +68,7 @@ def adc_init():
     try:
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(True)
-        GPIO.setup(MUX_PINS, MUX_PINS_IO)  # Sets the pins 17 and 4 as OUTPUTS
+        GPIO.setup(MUX_PINS, (int(i) for i in MUX_PINS_IO))  # Sets the pins 17 and 4 as OUTPUTS
 
         logging.debug(DBG_ADC_INIT_OK)
     except ImportError:
