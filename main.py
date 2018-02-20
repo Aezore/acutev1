@@ -102,7 +102,10 @@ def adc_read_average():
     adc_values_list = [0.0] * ADC_AVG_SAMPLES
 
     for each in range(ADC_AVG_SAMPLES):
-        adc_values_list[each] = adc.read_adc(0, gain=ADC_GAIN)
+        try:
+            adc_values_list[each] = adc.read_adc(0, gain=ADC_GAIN)
+        except OSError:
+            print(DBG_ADC_ERROR)
 
     reading = sum(adc_values_list) / len(adc_values_list)
 
