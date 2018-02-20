@@ -19,10 +19,10 @@ adc = Adafruit_ADS1x15.ADS1115()            # Creates the instance
 #########################################
 
 
-S1 = RESET_MUX = (GPIO.LOW, GPIO.LOW)       # 249K ohms
+S1 = RESET_MUX = HIGH_IMPEDANCE = (GPIO.LOW, GPIO.LOW)       # 249K ohms
 S2 = (GPIO.LOW, GPIO.HIGH)                  # 24k9 ohms
 S3 = (GPIO.HIGH, GPIO.LOW)                  # 2k49 ohms
-S4 = (GPIO.HIGH, GPIO.HIGH)                 # 24R9 ohms
+S4 = LOW_IMPEDANCE = (GPIO.HIGH, GPIO.HIGH)                 # 24R9 ohms
 
 MUX_OUTPUTS = (S1, S2, S3, S4)              # List of all 4 mux outputs
 MUX_PINS = (17, 4)                          # Raspberry GPIO Pin numbers
@@ -40,12 +40,13 @@ ADC_VOLTAGE_CLAMP = 5.8  # Maximum voltage clamped at adc input
 ADC_MAX_SAMPLE_POINTS = 30860
 ADC_CALIBRATION_FLOOR = 0.042
 
+
 #########################################
 # FUNCTION DEFINITIONS
 #########################################
 
 
-def init_adc():
+def adc_init():
     """[Initializes the ADC settings and mode]
     """
 
@@ -56,7 +57,7 @@ def init_adc():
     logging.debug('ADC Initialized.')
 
 
-def set_adc_range(output_channel):
+def adc_set_range(output_channel):
     """[Set the range pins of the mux accordingly]
 
     Arguments:
@@ -67,15 +68,14 @@ def set_adc_range(output_channel):
     logging.debug('ADC RANGE MUX CHANNEL SET TO {}.'.format(output_channel))
 
 
-def reset_adc_range():
-    """[RESETS THE ADC RANGE OUTPUT TO THE HIGHEST 249K ohm value]
-    """
+def adc_reset_range():
+    """[RESETS THE ADC RANGE OUTPUT TO THE HIGHEST 249K ohm value]"""
     GPIO.output(MUX_PINS, RESET_MUX)
 
     logging.debug('ADC Range MUX RESET.')
 
 
-def read_adc_average():
+def adc_read_average():
     """[Read the ADC channel and averages "avg_samples" times]
 
     Returns:
@@ -92,7 +92,7 @@ def read_adc_average():
     return int(reading)
 
 
-def autorange():
+def adc_autorange():
     """[AUTO RANGING SELECTION FUNCTION - If the adc resistor is too high
         the fucntion dials down until a reasonable value is true]
 
@@ -100,48 +100,58 @@ def autorange():
         [INTEGER]   -- [ADC AVERAGE VALUE]
         [STRING]    -- [THE RANGE IN "OHMS" OF SUCH VALUE]
     """
-    reset_adc_range()       # RESETS the range to S1 (249K)
-
     for channel, autorange_scale in zip(MUX_OUTPUTS, RANGE_SCALE_LIST_STR):
-        buffered_adc_sample = read_adc_average()
+        buffered_adc_sample = adc_read_average()
         if buffered_adc_sample < ADC_AUTORANGE_FLOOR:
-            set_adc_range(output_channel=channel)
+            adc_set_range(output_channel=channel)
         else:
             return buffered_adc_sample, autorange_scale
 
     logging.debug('ERROR -- AUTORANGE FAILED --')
 
 
-def pin_adc_terminal(read_pin):
-    """[Read the resistor value]
+def adc_calibration():
+    pass
+
+
+def adc_voltage_conversion(adc_sample_read):
+    """[ADC Voltage to Resistance conversion]
 
     Arguments:
-        read_pin {[type]} -- [description]
+        adc_sample_read {[int]} -- [the adc sample read]
 
     Returns:
-        [type] -- [description]
+        [int] -- [the sample value converted to resistance according to the scale]
     """
-    debug_text = "Volts: {0:>4.4f}     Ohms: {1}"  # Debug text
+    resistor_value = adc_sample_read * (ADC_VOLTAGE_CLAMP/ADC_MAX_SAMPLE_POINTS) - ADC_CALIBRATION_FLOOR
+    return resistor_value
 
-    if read_pin[0] > 30500:
+
+def adc_resistor_read():
+    """[Reads ADC channel, with autoranging and returns a value in ohms and scale]
+
+    Returns:
+        [Tuple] -- [Resistor value and its scale]
+    """
+    adc_reset_range()
+    adc_sample_read, adc_sample_scale = adc_autorange()
+
+    if adc_sample_read > 30500 and adc_sample_scale == HIGH_IMPEDANCE:
         return("Open circuit!")
-    elif read_pin[0] < 400:
+    elif adc_sample_read < 400 and adc_sample_scale == LOW_IMPEDANCE:
         return("Short to GND!")
     else:
-        return debug_text.format(
-                                (read_pin[0]*(5.8/30860)) - 0.042,
-                                RANGE_SCALE_LIST_STR[read_pin[1]]
-                                )
+        resistor_value = adc_voltage_conversion(sample=adc_sample_read)
+        return resistor_value, adc_sample_scale
 
 
 def main():
-    """[Main entry point]
-    """
+    """[Main entry point]"""
     logging.debug('Main Entry Point')
-    init_adc()
+    adc_init()
 
     while True:
-        read_pin = autorange()
+        read_pin = adc_resistor_read()
 
         print("DEBUG: Raw ADC: {0:>6} ADCRANGE: {1}".format(read_pin[0],
                                                             read_pin[1]
