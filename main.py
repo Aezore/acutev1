@@ -11,7 +11,7 @@ except ImportError as err:
     print('ERROR - Module not installed: '.format(err))
 
 logging.basicConfig(level=logging.DEBUG,
-                    format=Style.BRIGHT + '%(asctime)s - %(levelname)s - %(message)s')
+                    format=Style.BRIGHT + '%(asctime)s - %(levelname)s - %(message)s' + Style.NORMAL)
 
 adc = Adafruit_ADS1x15.ADS1115()            # Creates the instance
 
@@ -45,16 +45,16 @@ VOLTAGE_ADC_FLOOR = 400
 VOLTAGE_ADC_CEILING = 30400
 
 # DEBUG MESSAGES
-DBG_OPEN_CIRCUIT = Fore.LIGHTRED_EX + 'OPEN CIRCUIT!!'
-DBG_SHORT_CIRCUIT = Fore.LIGHTRED_EX + 'SHORT CIRCUIT!!'
-DBG_ADC_ERROR = Fore.LIGHTRED_EX + 'ERROR ADC INIT - NOT CONNECTED?'
-DBG_ADC_INIT_OK = Fore.LIGHTGREEN_EX + 'ADC Initialized OK.'
-DBG_ADC_MUX_RESET = Fore.LIGHTCYAN_EX + 'ADC Range MUX RESET.'
-DBG_ADC_AUTORANGE_FAIL = Fore.LIGHTRED_EX + 'ERROR -- AUTORANGE FAILED --'
+DBG_OPEN_CIRCUIT = Fore.LIGHTRED_EX + 'OPEN CIRCUIT!!' + Fore.RESET
+DBG_SHORT_CIRCUIT = Fore.LIGHTRED_EX + 'SHORT CIRCUIT!!' + Fore.RESET
+DBG_ADC_ERROR = Fore.LIGHTRED_EX + 'ERROR ADC INIT - NOT CONNECTED?' + Fore.RESET
+DBG_ADC_INIT_OK = Fore.LIGHTGREEN_EX + 'ADC Initialized OK.' + Fore.RESET
+DBG_ADC_MUX_RESET = Fore.LIGHTCYAN_EX + 'ADC Range MUX RESET.' + Fore.RESET
+DBG_ADC_AUTORANGE_FAIL = Fore.LIGHTRED_EX + 'ERROR -- AUTORANGE FAILED --' + Fore.RESET
 
-DBG_ADC_RANGE = 'ADC RANGE MUX CHANNEL SET TO {}'
-DBG_ADC_AVG = 'ADC AVG READING: {}'
-DBG_ADC_VOLT_RESISTOR = 'Voltage/Resistor - ADCSAMPLE: {}, RESISTOR: {}'
+DBG_ADC_RANGE = 'ADC RANGE MUX CHANNEL SET TO {}' + Fore.RESET
+DBG_ADC_AVG = 'ADC AVG READING: {}' + Fore.RESET
+DBG_ADC_VOLT_RESISTOR = 'Voltage/Resistor - ADCSAMPLE: {}, RESISTOR: {}' + Fore.RESET
 
 
 #########################################
@@ -71,7 +71,7 @@ def adc_init():
         GPIO.setup(MUX_PINS, MUX_PINS_IO)  # Sets the pins 17 and 4 as OUTPUTS
 
         logging.debug(DBG_ADC_INIT_OK)
-    except ImportError:
+    except OSError:
         logging.debug(DBG_ADC_ERROR)
 
 
