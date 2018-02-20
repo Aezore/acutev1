@@ -36,6 +36,9 @@ RANGE_SCALE_LIST_STR = ("/100K",            # Range labels
                         "/1K",
                         "ohm")
 
+ADC_VOLTAGE_CLAMP = 5.8  # Maximum voltage clamped at adc input
+ADC_MAX_SAMPLE_POINTS = 30860
+ADC_CALIBRATION_FLOOR = 0.042
 
 #########################################
 # FUNCTION DEFINITIONS
