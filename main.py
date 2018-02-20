@@ -3,9 +3,12 @@
 # IMPORTS
 #########################################
 import logging
-import RPi.GPIO as GPIO
-from colorama import init, Fore, Style
-import Adafruit_ADS1x15
+try:
+    import RPi.GPIO as GPIO
+    from colorama import init, Fore, Style
+    import Adafruit_ADS1x15
+except ImportError as err:
+    print('ERROR - Module not installed: '.format(err))
 
 logging.basicConfig(level=logging.DEBUG,
                     format=Style.BRIGHT + '%(asctime)s - %(levelname)s - %(message)s')
@@ -41,8 +44,17 @@ ADC_CALIBRATION_FLOOR = 0.042
 VOLTAGE_ADC_FLOOR = 400
 VOLTAGE_ADC_CEILING = 30400
 
-OPEN_CIRCUIT_DBG = Fore.LIGHTRED_EX + 'OPEN CIRCUIT!!'
-SHORT_CIRCUIT_DBG = Fore.LIGHTRED_EX + 'SHORT CIRCUIT!!'
+# DEBUG MESSAGES
+DBG_OPEN_CIRCUIT = Fore.LIGHTRED_EX + 'OPEN CIRCUIT!!'
+DBG_SHORT_CIRCUIT = Fore.LIGHTRED_EX + 'SHORT CIRCUIT!!'
+DBG_ADC_ERROR = Fore.LIGHTRED_EX + 'ERROR ADC INIT - NOT CONNECTED?'
+DBG_ADC_INIT_OK = Fore.LIGHTGREEN_EX + 'ADC Initialized OK.'
+DBG_ADC_MUX_RESET = Fore.LIGHTCYAN_EX + 'ADC Range MUX RESET.'
+DBG_ADC_AUTORANGE_FAIL = Fore.LIGHTRED_EX + 'ERROR -- AUTORANGE FAILED --'
+
+DBG_ADC_RANGE = 'ADC RANGE MUX CHANNEL SET TO {}'
+DBG_ADC_AVG = 'ADC AVG READING: {}'
+DBG_ADC_VOLT_RESISTOR = 'Voltage/Resistor - ADCSAMPLE: {}, RESISTOR: {}'
 
 
 #########################################
@@ -57,9 +69,10 @@ def adc_init():
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(True)
         GPIO.setup(MUX_PINS, MUX_PINS_IO)  # Sets the pins 17 and 4 as OUTPUTS
-        logging.debug(Fore.LIGHTGREEN_EX + 'ADC Initialized OK.')
-    except:
-        logging.debug(Fore.LIGHTRED_EX + 'ERROR ADC INIT - NOT CONNECTED?')
+
+        logging.debug(DBG_ADC_INIT_OK)
+    except ImportError:
+        logging.debug(DBG_ADC_ERROR)
 
 
 def adc_set_range(output_channel):
@@ -70,21 +83,21 @@ def adc_set_range(output_channel):
     """
     GPIO.output(MUX_PINS, output_channel)
 
-    logging.debug('ADC RANGE MUX CHANNEL SET TO {}.'.format(output_channel))
+    logging.debug(DBG_ADC_RANGE.format(output_channel))
 
 
 def adc_reset_range():
     """[RESETS THE ADC RANGE OUTPUT TO THE HIGHEST 249K ohm value]"""
     GPIO.output(MUX_PINS, RESET_MUX)
 
-    logging.debug(Fore.LIGHTCYAN_EX 'ADC Range MUX RESET.')
+    logging.debug(DBG_ADC_MUX_RESET)
 
 
 def adc_read_average():
     """[Read the ADC channel and averages "avg_samples" times]
 
     Returns:
-        [INTEGER] -- [ averaged ADC read value ]
+        [float] -- [ averaged ADC read value ]
     """
     adc_values_list = [0.0] * ADC_AVG_SAMPLES
 
@@ -93,8 +106,8 @@ def adc_read_average():
 
     reading = sum(adc_values_list) / len(adc_values_list)
 
-    logging.debug('ADC AVG READING: {}'.format(reading))
-    return int(reading)
+    logging.debug(DBG_ADC_AVG.format(reading))
+    return reading
 
 
 def adc_autorange():
@@ -112,7 +125,7 @@ def adc_autorange():
         else:
             return buffered_adc_sample, autorange_scale
 
-    logging.debug('ERROR -- AUTORANGE FAILED --')
+    logging.debug(DBG_ADC_AUTORANGE_FAIL)
 
 
 def adc_calibration():
@@ -129,7 +142,9 @@ def adc_voltage_conversion(adc_sample_read):
         [int] -- [the sample value converted to resistance according to the scale]
     """
     resistor_value = adc_sample_read * (ADC_VOLTAGE_CLAMP/ADC_MAX_SAMPLE_POINTS) - ADC_CALIBRATION_FLOOR
-    logging.debug('adc_voltage_conv - ADCSAMPLE: {}, RESISTOR: {}'.format(adc_sample_read, resistor_value))
+
+    logging.debug(DBG_ADC_VOLT_RESISTOR.format(adc_sample_read, resistor_value))
+
     return resistor_value
 
 
@@ -143,11 +158,11 @@ def adc_resistor_read():
     adc_sample_read, adc_sample_scale = adc_autorange()
 
     if adc_sample_read > VOLTAGE_ADC_CEILING and adc_sample_scale == HIGH_IMPEDANCE:
-        logging.debug(OPEN_CIRCUIT_DBG)
-        return OPEN_CIRCUIT_DBG
+        logging.debug(DBG_OPEN_CIRCUIT)
+        return DBG_OPEN_CIRCUIT
     elif adc_sample_read < VOLTAGE_ADC_FLOOR and adc_sample_scale == LOW_IMPEDANCE:
-        logging.debug(SHORT_CIRCUIT_DBG)
-        return SHORT_CIRCUIT_DBG
+        logging.debug(DBG_SHORT_CIRCUIT)
+        return DBG_SHORT_CIRCUIT
     else:
         resistor_value = adc_voltage_conversion(sample=adc_sample_read)
         return resistor_value, adc_sample_scale
