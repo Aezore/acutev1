@@ -21,9 +21,9 @@ logging.basicConfig(level=logging.DEBUG,
 
 adc = None  # Initial ADC Object declaration
 
-S1 = RESET_MUX = HIGH_IMPEDANCE = (GPIO.LOW, GPIO.LOW)       # 249K ohms
-S2 = (GPIO.LOW, GPIO.HIGH)                  # 24k9 ohms
-S3 = (GPIO.HIGH, GPIO.LOW)                  # 2k49 ohms
+S1 = RESET_MUX = HIGH_IMPEDANCE = (GPIO.LOW, GPIO.LOW)      # 249K ohms
+S2 = (GPIO.LOW, GPIO.HIGH)                                  # 24k9 ohms
+S3 = (GPIO.HIGH, GPIO.LOW)                                  # 2k49 ohms
 S4 = LOW_IMPEDANCE = (GPIO.HIGH, GPIO.HIGH)                 # 24R9 ohms
 
 MUX_OUTPUTS = (S1, S2, S3, S4)              # List of all 4 mux outputs
