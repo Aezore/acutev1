@@ -3,15 +3,17 @@
 # IMPORTS
 #########################################
 import logging
+from collections import namedtuple
 
 try:
     import RPi.GPIO as GPIO
+    from tqdm import tqdm
     from colorama import init, Fore, Style
     import Adafruit_ADS1x15
 except ImportError as err:
     print("ERROR - Module not installed: ".format(err))
 
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.CRITICAL,
                     format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" + Style.NORMAL)
 
 
@@ -21,10 +23,10 @@ logging.basicConfig(level=logging.DEBUG,
 
 adc = None  # Initial ADC Object declaration
 
-S1 = RESET_MUX = HIGH_IMPEDANCE = (GPIO.LOW, GPIO.LOW)      # 249K ohms
-S2 = (GPIO.LOW, GPIO.HIGH)                                  # 24k9 ohms
-S3 = (GPIO.HIGH, GPIO.LOW)                                  # 2k49 ohms
-S4 = LOW_IMPEDANCE = (GPIO.HIGH, GPIO.HIGH)                 # 24R9 ohms
+S1 = RESET_MUX = HIGH_IMPEDANCE = namedtuple(pin17=GPIO.LOW, pin4=GPIO.LOW)      # 249K ohms
+S2 = namedtuple(pin17=GPIO.LOW, pin4=GPIO.HIGH)                                  # 24k9 ohms
+S3 = namedtuple(pin17=GPIO.HIGH, pin4=GPIO.LOW)                                  # 2k49 ohms
+S4 = LOW_IMPEDANCE = namedtuple(pin17=GPIO.HIGH, pin4=GPIO.HIGH)                 # 24R9 ohms
 
 MUX_OUTPUTS = (S1, S2, S3, S4)              # List of all 4 mux outputs
 MUX_PINS = (17, 4)                          # Raspberry GPIO Pin numbers
@@ -53,7 +55,7 @@ DBG_ADC_INIT_OK = Fore.LIGHTGREEN_EX + "ADC Initialized OK." + Fore.RESET
 DBG_ADC_INIT_ERR = Fore.LIGHTRED_EX + "Can't create ADS1x15 instance object" + Fore.RESET
 DBG_ADC_ERROR = Fore.LIGHTRED_EX + "ERROR ADC INIT - NOT CONNECTED?" + Fore.RESET
 DBG_ADC_MUX_RESET = Fore.LIGHTCYAN_EX + "ADC Range MUX RESET." + Fore.RESET
-DBG_ADC_AUTORANGE_FAIL = Fore.LIGHTRED_EX + "ERROR -- AUTORANGE FAILED --" + Fore.RESET
+DBG_ADC_AUTORANGE_FAIL = Fore.LIGHTRED_EX + "ERROR -- AUTORANGE FAILED -- {}" + Fore.RESET
 
 DBG_ADC_RANGE = "ADC RANGE MUX CHANNEL SET TO {}" + Fore.RESET
 DBG_ADC_AVG = "ADC AVG READING: {}" + Fore.RESET
@@ -88,7 +90,7 @@ def adc_set_range(output_channel):
     """[Set the range pins of the mux accordingly]
 
     Arguments:
-        output {[int]} -- [from 0 to 3 means from 249kohms to 24R9ohms]
+        output_channel {[int]} -- [from 0 to 3 means from 249kohms to 24R9ohms]
     """
     GPIO.output(MUX_PINS, output_channel)
 
@@ -144,6 +146,7 @@ def adc_autorange():
 
 
 def adc_calibration():
+    """[ADC Zero Calibration]"""
     pass
 
 
@@ -184,7 +187,12 @@ def adc_resistor_read():
             resistor_value = adc_voltage_conversion(sample=adc_sample_read)
             return [resistor_value, adc_sample_scale]
     except TypeError as err:
-        print(DBG_ADC_AUTORANGE_FAIL.format(err))
+        logging.debug(DBG_ADC_AUTORANGE_FAIL.format(err))
+
+
+#####################################################
+# MAIN FUNCTION
+#####################################################
 
 
 def main():
@@ -194,8 +202,10 @@ def main():
     init()  # Colorama init
 
     while True:
-        read_pin = adc_resistor_read()
-        print(read_pin)
+        for each in tqdm(range(156)):
+            read_pin = adc_resistor_read()
+
+        print("Value: ", read_pin)
         input()
 
 
