@@ -4,6 +4,7 @@
 #########################################
 import logging
 from collections import namedtuple
+from statistics import mean
 
 try:
     import RPi.GPIO as GPIO
@@ -86,6 +87,14 @@ def raspi_init():
         logging.debug(DBG_ADC_INIT_ERR)
 
 
+def adc_reset_range(func):  # Decorator function
+    """[RESETS THE ADC RANGE OUTPUT TO THE HIGHEST 249K ohm value]"""
+    def wrapper():
+        GPIO.output(MUX_PINS, RESET_MUX)
+        logging.debug(DBG_ADC_MUX_RESET)
+    return wrapper
+
+
 def adc_set_range(output_channel):
     """[Set the range pins of the mux accordingly]
 
@@ -95,13 +104,6 @@ def adc_set_range(output_channel):
     GPIO.output(MUX_PINS, output_channel)
 
     logging.debug(DBG_ADC_RANGE.format(output_channel))
-
-
-def adc_reset_range():
-    """[RESETS THE ADC RANGE OUTPUT TO THE HIGHEST 249K ohm value]"""
-    GPIO.output(MUX_PINS, RESET_MUX)
-
-    logging.debug(DBG_ADC_MUX_RESET)
 
 
 def adc_read_average():
@@ -118,15 +120,15 @@ def adc_read_average():
         except OSError:
             logging.debug(DBG_ADC_ERROR)
 
-    reading = sum(adc_values_list) / len(adc_values_list)
+    reading_mean = mean(adc_values_list)
 
-    logging.debug(DBG_ADC_AVG.format(reading))
-    return reading
+    logging.debug(DBG_ADC_AVG.format(reading_mean))
+    return reading_mean
 
 
 def adc_autorange():
     """[AUTO RANGING SELECTION FUNCTION - If the adc resistor is too high
-        the fucntion dials down until a reasonable value is true]
+        the function dials down until a reasonable value is true]
 
     Returns:
         [INTEGER]   -- [ADC AVERAGE VALUE]
@@ -166,14 +168,13 @@ def adc_voltage_conversion(adc_sample_read):
     return resistor_value
 
 
+@adc_reset_range
 def adc_resistor_read():
     """[Reads ADC channel, with autoranging and returns a value in ohms and scale]
 
     Returns:
         [LIST] -- [Resistor value and its scale]
     """
-    adc_reset_range()
-
     try:
         adc_sample_read, adc_sample_scale = adc_autorange()
 
@@ -184,7 +185,7 @@ def adc_resistor_read():
             logging.debug(DBG_SHORT_CIRCUIT)
             return DBG_SHORT_CIRCUIT
         else:
-            resistor_value = adc_voltage_conversion(sample=adc_sample_read)
+            resistor_value = adc_voltage_conversion(adc_sample_read=adc_sample_read)
             return [resistor_value, adc_sample_scale]
     except TypeError as err:
         logging.debug(DBG_ADC_AUTORANGE_FAIL.format(err))
