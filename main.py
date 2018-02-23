@@ -5,8 +5,8 @@
 import logging
 
 try:
-    from colorama import init, Fore, Style
-    from adclib import adc_resistor_read
+    from colorama import init, Style
+    from adclib import adc_resistor_read, raspi_init
     from tqdm import tqdm
 except ImportError as err:
     print("ERROR - Module not installed: ".format(err))
@@ -28,7 +28,6 @@ def main():
     while True:
         for each in tqdm(range(156)):
             read_pin = adc_resistor_read()
-
         print("Value: ", read_pin)
         input()
 

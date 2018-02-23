@@ -1,14 +1,12 @@
-"""[Autoranging program for resistor reading and profiling]"""
 #########################################
 # IMPORTS
 #########################################
 import logging
-from collections import namedtuple
 from statistics import mean
 
 try:
     import RPi.GPIO as GPIO
-    from colorama import init, Fore, Style
+    from colorama import Fore, Style
     import Adafruit_ADS1x15
 except ImportError as err:
     print("ERROR - Module not installed: ".format(err))
@@ -23,10 +21,10 @@ logging.basicConfig(level=logging.CRITICAL,
 
 adc = None  # Initial ADC Object declaration
 
-S1 = RESET_MUX = HIGH_IMPEDANCE = namedtuple(pin17=GPIO.LOW, pin4=GPIO.LOW)      # 249K ohms
-S2 = namedtuple(pin17=GPIO.LOW, pin4=GPIO.HIGH)                                  # 24k9 ohms
-S3 = namedtuple(pin17=GPIO.HIGH, pin4=GPIO.LOW)                                  # 2k49 ohms
-S4 = LOW_IMPEDANCE = namedtuple(pin17=GPIO.HIGH, pin4=GPIO.HIGH)                 # 24R9 ohms
+S1 = RESET_MUX = HIGH_IMPEDANCE = (GPIO.LOW, GPIO.LOW)      # 249K ohms
+S2 = (GPIO.LOW, GPIO.HIGH)                                  # 24k9 ohms
+S3 = (GPIO.HIGH, GPIO.LOW)                                  # 2k49 ohms
+S4 = LOW_IMPEDANCE = (GPIO.HIGH, GPIO.HIGH)                 # 24R9 ohms
 
 MUX_OUTPUTS = (S1, S2, S3, S4)              # List of all 4 mux outputs
 MUX_PINS = (17, 4)                          # Raspberry GPIO Pin numbers
@@ -91,6 +89,7 @@ def adc_reset_range(func):  # Decorator function
     def wrapper():
         GPIO.output(MUX_PINS, RESET_MUX)
         logging.debug(DBG_ADC_MUX_RESET)
+        func()
     return wrapper
 
 
