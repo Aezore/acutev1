@@ -32,7 +32,7 @@ def main():
     """[Main entry point]"""
     logging.debug("Main Entry Point")
     startup()
-
+    models.uix_input()
     while True:
         for each in tqdm(range(156)):
             read_pin = adc_resistor_read()

@@ -44,6 +44,7 @@ def uix_input():
     name = input("Nombre?: ")
     pincount = input("Pincount?: ")
     create_ecu(name=name, pincount=pincount)
+    register_new_profile(name, pincount)
 
 
 def register_new_profile(name, pincount):
@@ -70,6 +71,8 @@ def calculate_compliance(new_profiledata, population_list):
     arr = numpy.array(population_list)
     mean_list = numpy.mean(arr, axis=0)
     stdv_list = numpy.std(arr, axis=0)
+    print(mean_list)
+    print(stdv_list)
 
     for pin_number, mean_value, stdv, pin_data in enumerate(zip(mean_list, stdv_list, new_profiledata)):
         if pin_data > mean_value + (STDV_CORRECTION * stdv) or pin_data < mean_value - (STDV_CORRECTION * stdv):
@@ -82,7 +85,7 @@ def calculate_compliance(new_profiledata, population_list):
 
 
 def save_new_profile(ecu_type, data, ref, dbnumber):
-    profile_datapacked = msgpack.packb(data)
+    profile_datapacked = msgpack.packb(list(data))
     profile = pin_data.create(ecu_name=ecu_type,
                               ecu_ref_number=ref,
                               ecu_db_number=dbnumber,

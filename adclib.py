@@ -69,7 +69,7 @@ def raspi_init():
     """[Initializes the ADC settings and mode]"""
     try:
         GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(True)
+        GPIO.setwarnings(False)
         GPIO.setup(MUX_PINS, MUX_PINS_IO)  # Sets the pins 17 and 4 as OUTPUTS
 
         logging.debug(DBG_HW_INIT_OK)
