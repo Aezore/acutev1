@@ -5,7 +5,7 @@ import msgpack
 import random
 import numpy
 
-logging.basicConfig(level=logging.CRITICAL,
+logging.basicConfig(level=logging.DEBUG,
                     format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" + Style.NORMAL)
 
 db = SqliteDatabase("database.db")

@@ -11,7 +11,7 @@ try:
 except ImportError as err:
     print("ERROR - Module not installed: ".format(err))
 
-logging.basicConfig(level=logging.CRITICAL,
+logging.basicConfig(level=logging.DEBUG,
                     format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" + Style.NORMAL)
 
 
@@ -27,7 +27,7 @@ S3 = (GPIO.HIGH, GPIO.LOW)                                  # 2k49 ohms
 S4 = LOW_IMPEDANCE = (GPIO.HIGH, GPIO.HIGH)                 # 24R9 ohms
 
 MUX_OUTPUTS = (S1, S2, S3, S4)              # List of all 4 mux outputs
-MUX_PINS = (17, 4)                          # Raspberry GPIO Pin numbers
+MUX_PINS = (17, 4)                          # Raspberry GPIO Pin numbers, S1, S0
 MUX_PINS_IO = GPIO.OUT
 
 ADC_AUTORANGE_FLOOR = 3000
@@ -73,8 +73,8 @@ def raspi_init():
         GPIO.setup(MUX_PINS, MUX_PINS_IO)  # Sets the pins 17 and 4 as OUTPUTS
 
         logging.debug(DBG_HW_INIT_OK)
-    except OSError:
-        logging.debug(DBG_ADC_ERROR)
+    except OSError as err:
+        logging.debug(DBG_ADC_ERROR + "-" + err)
 
     global adc
     try:

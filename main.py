@@ -14,7 +14,7 @@ try:
 except ImportError as err:
     print("ERROR - Module not installed: {}".format(err))
 
-logging.basicConfig(level=logging.CRITICAL,
+logging.basicConfig(level=logging.DEBUG,
                     format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" + Style.NORMAL)
 
 #####################################################
@@ -32,7 +32,7 @@ def main():
     """[Main entry point]"""
     logging.debug("Main Entry Point")
     startup()
-    models.uix_input()
+    # models.uix_input()
     while True:
         for each in tqdm(range(156)):
             read_pin = adc_resistor_read()
