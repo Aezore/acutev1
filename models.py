@@ -44,17 +44,17 @@ def uix_input():
     name = input("Nombre?: ")
     pincount = input("Pincount?: ")
     create_ecu(name=name, pincount=pincount)
-    register_new_profile(name, pincount)
+    new_profile(name, pincount)
 
 
-def register_new_profile(name, pincount):
+def new_profile(name, pincount):
     ecu = ecu_type.select().where(ecu_type.ecu_name == name).get()
     population = get_profiles(ecu)
 
     sample_data = (random.randint(0, 9) for each in range(156))
-    save_new_profile(ecu, sample_data, "0281011900", 20211)
+    save_profile(ecu, sample_data, "0281011900", 20211)
 
-    results = calculate_compliance(new_profiledata=sample_data, population_list=population)
+    results = compliance(new_profiledata=sample_data, population_list=population)
 
     if results == COMPLIANT:
         print("ECU IS COMPLIANT UNDER STANDARD PROFILING")
@@ -63,7 +63,7 @@ def register_new_profile(name, pincount):
             print(each)
 
 
-def calculate_compliance(new_profiledata, population_list):
+def compliance(new_profiledata, population_list):
     stdv_list = []
     mean_list = []
     results = []
@@ -84,7 +84,7 @@ def calculate_compliance(new_profiledata, population_list):
         return results
 
 
-def save_new_profile(ecu_type, data, ref, dbnumber):
+def save_profile(ecu_type, data, ref, dbnumber):
     profile_datapacked = msgpack.packb(list(data))
     profile = pin_data.create(ecu_name=ecu_type,
                               ecu_ref_number=ref,

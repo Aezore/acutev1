@@ -14,7 +14,7 @@ try:
 except ImportError as err:
     print("ERROR - Module not installed: {}".format(err))
 
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.CRITICAL,
                     format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" + Style.NORMAL)
 
 #####################################################
@@ -34,9 +34,8 @@ def main():
     startup()
     # models.uix_input()
     while True:
-        for each in tqdm(range(156)):
-            read_pin = adc_resistor_read()
-        print("Value: ", read_pin)
+        read_pin, read_scale = adc_resistor_read()
+        print("main.Value: {:<4} - {:>6}".format(read_pin, read_scale))
         input()
 
 
