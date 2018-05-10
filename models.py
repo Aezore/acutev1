@@ -51,7 +51,8 @@ def new_profile(name, pincount):
     ecu = ecu_type.select().where(ecu_type.ecu_name == name).get()
     population = get_profiles(ecu)
 
-    sample_data = (random.randint(0, 9) for each in range(156))
+    # sample_data = (random.randint(0, 9) for each in range(156))
+    sample_data = random.sample(range(100), 156)
     save_profile(ecu, sample_data, "0281011900", 20211)
 
     results = compliance(new_profiledata=sample_data, population_list=population)
@@ -122,3 +123,5 @@ def create_ecu(name, pincount):
     if not ecu_type.select().where(ecu_type.ecu_name == name):
         ecu = ecu_type.create(ecu_name=name, ecu_pincount=pincount)
         ecu.save()
+    else:
+        print("ECU NAME ALREADY EXIST")

@@ -62,7 +62,7 @@ DBG_ADC_VOLT_RESISTOR = "Voltage/Resistor - ADCSAMPLE: {}, RESISTOR: {}" + Fore.
 #########################################
 
 
-def raspi_init():
+def raspi_init():  # Initializes HW GPIO and ADC
     """[Initializes the ADC settings and mode]"""
     try:
         GPIO.setmode(GPIO.BCM)
