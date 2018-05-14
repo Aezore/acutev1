@@ -43,8 +43,17 @@ class pin_data(Model):
 def uix_input():
     name = input("Nombre?: ")
     pincount = input("Pincount?: ")
+
     create_ecu(name=name, pincount=pincount)
     new_profile(name, pincount)
+
+
+def create_ecu(name, pincount):
+    if not ecu_type.select().where(ecu_type.ecu_name == name):
+        ecu = ecu_type.create(ecu_name=name, ecu_pincount=pincount)
+        ecu.save()
+    else:
+        print("ECU NAME ALREADY EXIST")
 
 
 def new_profile(name, pincount):
@@ -52,10 +61,10 @@ def new_profile(name, pincount):
     population = get_profiles(ecu)
 
     # sample_data = (random.randint(0, 9) for each in range(156))
-    sample_data = random.sample(range(100), 156)
+    sample_data = random.sample(range(1000), 156)
     save_profile(ecu, sample_data, "0281011900", 20211)
 
-    results = compliance(new_profiledata=sample_data, population_list=population)
+    results = compliance(new_profiledata=sample_data, known_good_values=population)
 
     if results == COMPLIANT:
         print("ECU IS COMPLIANT UNDER STANDARD PROFILING")
@@ -64,18 +73,21 @@ def new_profile(name, pincount):
             print(each)
 
 
-def compliance(new_profiledata, population_list):
+def compliance(new_profiledata, known_good_values):
+    known_and_new = known_good_values[:]
+    known_and_new.append(new_profiledata)
+
     stdv_list = []
     mean_list = []
     results = []
 
-    arr = numpy.array(population_list)
+    arr = numpy.array(known_and_new)
     mean_list = numpy.mean(arr, axis=0)
     stdv_list = numpy.std(arr, axis=0)
-    print(mean_list)
-    print(stdv_list)
 
-    for pin_number, mean_value, stdv, pin_data in enumerate(zip(mean_list, stdv_list, new_profiledata)):
+    for pin_number, mean_value, stdv, pin_data in enumerate(zip(numpy.nditer(mean_list),
+                                                                numpy.nditer(stdv_list),
+                                                                new_profiledata)):
         if pin_data > mean_value + (STDV_CORRECTION * stdv) or pin_data < mean_value - (STDV_CORRECTION * stdv):
             results.append(['DEFECT', pin_number, mean_value, stdv, pin_data])
 
@@ -83,6 +95,19 @@ def compliance(new_profiledata, population_list):
         return COMPLIANT
     else:
         return results
+
+
+def powerset(seq):
+    """
+    Returns all the subsets of this set. This is a generator.
+    """
+    if len(seq) <= 1:
+        yield seq
+        yield []
+    else:
+        for item in powerset(seq[1:]):
+            yield [seq[0]]+item
+            yield item
 
 
 def save_profile(ecu_type, data, ref, dbnumber):
@@ -117,11 +142,3 @@ def init_db():
     except Exception as err:
         print(err)
         # logging.CRITICAL("Database tables creation ERROR")
-
-
-def create_ecu(name, pincount):
-    if not ecu_type.select().where(ecu_type.ecu_name == name):
-        ecu = ecu_type.create(ecu_name=name, ecu_pincount=pincount)
-        ecu.save()
-    else:
-        print("ECU NAME ALREADY EXIST")

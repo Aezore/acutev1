@@ -10,7 +10,7 @@ try:
     from colorama import init as colorama_init
     from adclib import adc_resistor_read, raspi_init
 
-    from tqdm import tqdm
+    # from tqdm import tqdm
 except ImportError as err:
     print("ERROR - Module not installed: {}".format(err))
 
@@ -32,7 +32,7 @@ def main():
     """[Main entry point]"""
     logging.debug("Main Entry Point")
     startup()
-    # models.uix_input()
+    models.uix_input()
     while True:
         read_pin, read_scale = adc_resistor_read()
         print("main.Value: {:<4} - {:>6}".format(read_pin, read_scale))

@@ -166,7 +166,6 @@ def adc_autorange():
             return buffered_adc_sample, autorange_scale
 
 
-
 def adc_resistor_read():
     """[Reads ADC channel, with autoranging and returns a value in ohms and scale]
 
