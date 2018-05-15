@@ -85,9 +85,9 @@ def compliance(new_profiledata, known_good_values):
     mean_list = numpy.mean(arr, axis=0)
     stdv_list = numpy.std(arr, axis=0)
 
-    for pin_number, mean_value, stdv, pin_data in enumerate(zip(numpy.nditer(mean_list),
-                                                                numpy.nditer(stdv_list),
-                                                                new_profiledata)):
+    for pin_number, (mean_value, stdv, pin_data) in enumerate(zip(numpy.nditer(mean_list),
+                                                                  numpy.nditer(stdv_list),
+                                                                  new_profiledata)):
         if pin_data > mean_value + (STDV_CORRECTION * stdv) or pin_data < mean_value - (STDV_CORRECTION * stdv):
             results.append(['DEFECT', pin_number, mean_value, stdv, pin_data])
 
