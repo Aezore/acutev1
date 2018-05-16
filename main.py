@@ -15,7 +15,8 @@ except ImportError as err:
     print("ERROR - Module not installed: {}".format(err))
 
 logging.basicConfig(level=logging.CRITICAL,
-                    format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" + Style.NORMAL)
+                    format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" +
+                    Style.NORMAL)
 
 #####################################################
 # MAIN FUNCTION
@@ -23,6 +24,7 @@ logging.basicConfig(level=logging.CRITICAL,
 
 
 def startup():
+    """ STARTUP ROUTINE """
     raspi_init()
     colorama_init()
     models.init_db()

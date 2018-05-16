@@ -1,3 +1,4 @@
+""" MODELS MODULE """
 import logging
 import random
 import msgpack
@@ -7,7 +8,8 @@ from peewee import SqliteDatabase, Model, CharField, IntegerField, BlobField, Fo
 from colorama import Style
 
 logging.basicConfig(level=logging.DEBUG,
-                    format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" + Style.NORMAL)
+                    format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" +
+                    Style.NORMAL)
 
 DB = SqliteDatabase("database.db")
 
@@ -20,20 +22,24 @@ COMPLIANT = [1]
 
 
 class EcuType(Model):
+    """ ECU TYPE MODEL CLASS """
     ecu_name = CharField()
     ecu_pincount = IntegerField()
 
     class Meta:
+        """ META CLASS """
         database = DB
 
 
 class PinData(Model):
+    """ PIN DATA MODEL CLASS """
     ecu_name = ForeignKeyField(EcuType, backref="ecu")
     ecu_ref_number = CharField()
     ecu_db_number = IntegerField()
     pin_reading_msgpack = BlobField()
 
     class Meta:
+        """ META CLASS """
         database = DB
 
 #################################################
@@ -42,6 +48,7 @@ class PinData(Model):
 
 
 def uix_input():
+    """ TEST ROUTINE MANUAL INPUT """
     name = input("Nombre?: ")
     pincount = input("Pincount?: ")
 
@@ -50,6 +57,7 @@ def uix_input():
 
 
 def create_ecu(name, pincount):
+    """ CREATE NEW ECU PROFILE ROUTINE """
     if not EcuType.select().where(EcuType.ecu_name == name):
         ecu = EcuType.create(ecu_name=name, ecu_pincount=pincount)
         ecu.save()
@@ -58,10 +66,11 @@ def create_ecu(name, pincount):
 
 
 def new_profile(name, pincount):
+    """ NEW PROFILE ROUTINE """
     ecu = EcuType.select().where(EcuType.ecu_name == name).get()
     population = get_profiles(ecu_type=ecu)
 
-    sample_data = random.sample(range(1000), 156)
+    sample_data = random.sample(range(1000), pincount)
     save_profile(ecu_type=ecu, data=sample_data, ref="0281011900", dbnumber=20211)
 
     results = compliance(new_profiledata=sample_data, known_good_values=population)
@@ -92,14 +101,16 @@ def compliance(new_profiledata, known_good_values):
                                                                   stdv_list,
                                                                   new_profiledata)):
         if (stdv/mean_value) * 100 > STDV_CORRECTION:
-            results.append(['DEFECT', pin_number, mean_value, stdv, pin_data, ((stdv/mean_value)*100)])
+            results.append(['DEFECT', pin_number, mean_value, stdv, pin_data,
+                            ((stdv/mean_value)*100)])
         else:
-            results.append(['OK', pin_number, mean_value, stdv, pin_data, ((stdv/mean_value)*100)])
+            results.append(['OK', pin_number, mean_value, stdv, pin_data,
+                            ((stdv/mean_value)*100)])
 
     if not results:
         return COMPLIANT
-    else:
-        return results
+
+    return results
 
 
 def powerset(seq):
@@ -116,6 +127,7 @@ def powerset(seq):
 
 
 def save_profile(ecu_type, data, ref, dbnumber):
+    """ SAVE PROFILE ROUTINE """
     profile_datapacked = msgpack.packb(list(data))
     profile = PinData.create(ecu_name=ecu_type,
                              ecu_ref_number=ref,
@@ -125,6 +137,7 @@ def save_profile(ecu_type, data, ref, dbnumber):
 
 
 def get_profiles(ecu_type):
+    """ GET DB PROFILES """
     profile_list = PinData.select().where(PinData.ecu_name == ecu_type)
     profile_datalist = []
     for each in profile_list:
@@ -134,6 +147,7 @@ def get_profiles(ecu_type):
 
 
 def init_db():
+    """ STARTUP ROUTINE """
     try:
         DB.connect()
         # logging.DEBUG("Database connection OK")

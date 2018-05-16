@@ -1,3 +1,6 @@
+"""
+ADC MODULE
+"""
 #########################################
 # IMPORTS
 #########################################
@@ -9,17 +12,18 @@ try:
     from colorama import Fore, Style
     import Adafruit_ADS1x15
 except ImportError as err:
-    print("ERROR - Module not installed: ".format(err))
+    print("ERROR - Module not installed: {}".format(err))
 
 logging.basicConfig(level=logging.CRITICAL,
-                    format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" + Style.NORMAL)
+                    format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" +
+                    Style.NORMAL)
 
 
 #########################################
 # VARIABLES
 #########################################
 
-adc = None  # Initial ADC Object declaration
+ADC = None  # Initial ADC Object declaration
 
 S1 = RESET_MUX = HIGH_IMPEDANCE = (GPIO.LOW, GPIO.LOW)      # 249K ohms
 S2 = (GPIO.LOW, GPIO.HIGH)                                  # 24k9 ohms
@@ -37,9 +41,9 @@ RANGE_SCALE_LIST_STR = ("/100K", "/10K", "/1K", "ohm")
 
 ADC_VOLTAGE_CLAMP = 5.8  # Maximum voltage clamped at adc input
 ADC_MAX_SAMPLE_POINTS = 30860
-ADC_CALIBRATION_FLOOR = 0.062
+ADC_CAL_FLOOR = 0.062
 VOLTAGE_ADC_FLOOR = 400
-VOLTAGE_ADC_CEILING = 30400
+VOLT_ADC_CEILING = 30400
 
 # DEBUG MESSAGES
 DBG_OPEN_CIRCUIT = Fore.LIGHTYELLOW_EX + "OPEN CIRCUIT!!" + Fore.RESET
@@ -73,9 +77,9 @@ def raspi_init():  # Initializes HW GPIO and ADC
     except OSError as err:
         logging.debug(DBG_ADC_ERROR + "-" + err)
 
-    global adc
+    global ADC
     try:
-        adc = Adafruit_ADS1x15.ADS1115()  # Creates the object instance for the ADS1115
+        ADC = Adafruit_ADS1x15.ADS1115()  # Creates the object instance for the ADS1115
         logging.debug(DBG_ADC_INIT_OK)
     except Exception:
         logging.debug(DBG_ADC_INIT_ERR)
@@ -110,7 +114,7 @@ def adc_read_average():
 
     for each in range(ADC_AVG_SAMPLES):
         try:
-            adc_values_list[each] = adc.read_adc(0, gain=ADC_GAIN)
+            adc_values_list[each] = ADC.read_adc(0, gain=ADC_GAIN)
         except OSError:
             logging.debug(DBG_ADC_ERROR)
     print("ADC_VALUE_LIST_AFTER_AVERAGE: ", adc_values_list)
@@ -120,12 +124,12 @@ def adc_read_average():
     return int(reading_mean)  # Rounds up the value of the mean
 
 
-def adc_calibration():  # TODO
+def adc_calibration():
     """[ADC Zero Calibration]"""
     pass
 
 
-def adc_voltage_conversion(adc_sample_read):  # Converts the raw ADC integer value into a ohmic value
+def adc_voltage_conversion(adc_sample_read):
     """[ADC Voltage to Resistance conversion]
 
     Arguments:
@@ -134,7 +138,7 @@ def adc_voltage_conversion(adc_sample_read):  # Converts the raw ADC integer val
     Returns:
         [int] -- [the sample value converted to resistance according to the scale]
     """
-    resistor_value = adc_sample_read * (ADC_VOLTAGE_CLAMP/ADC_MAX_SAMPLE_POINTS) - ADC_CALIBRATION_FLOOR
+    resistor_value = adc_sample_read * (ADC_VOLTAGE_CLAMP/ADC_MAX_SAMPLE_POINTS) - ADC_CAL_FLOOR
 
     logging.debug(DBG_ADC_VOLT_RESISTOR.format(adc_sample_read, resistor_value))
 
@@ -146,6 +150,7 @@ def adc_voltage_conversion(adc_sample_read):  # Converts the raw ADC integer val
 
 
 def adc_autorange():
+    """ AUTORANGING ROUTINE """
 
     for channel, autorange_scale in zip(MUX_OUTPUTS, RANGE_SCALE_LIST_STR):
         adc_set_range(channel)
@@ -153,15 +158,15 @@ def adc_autorange():
         buffered_adc_sample = adc_read_average()
         print("Buffered_ADC: ", buffered_adc_sample)
 
-        if buffered_adc_sample < VOLTAGE_ADC_FLOOR and buffered_adc_sample > VOLTAGE_ADC_CEILING:
+        if buffered_adc_sample < VOLTAGE_ADC_FLOOR and buffered_adc_sample > VOLT_ADC_CEILING:
             pass
         elif buffered_adc_sample < VOLTAGE_ADC_FLOOR and channel == LOW_IMPEDANCE:
             adc_reset_range()
             return buffered_adc_sample, autorange_scale
-        elif buffered_adc_sample > VOLTAGE_ADC_CEILING and channel == HIGH_IMPEDANCE:
+        elif buffered_adc_sample > VOLT_ADC_CEILING and channel == HIGH_IMPEDANCE:
             adc_reset_range()
             return buffered_adc_sample, autorange_scale
-        elif buffered_adc_sample > ADC_AUTORANGE_FLOOR and buffered_adc_sample < VOLTAGE_ADC_CEILING:
+        elif buffered_adc_sample > ADC_AUTORANGE_FLOOR and buffered_adc_sample < VOLT_ADC_CEILING:
             adc_reset_range()
             return buffered_adc_sample, autorange_scale
 
@@ -175,12 +180,11 @@ def adc_resistor_read():
     adc_sample_read, adc_sample_scale = adc_autorange()
     print(adc_sample_read, adc_sample_scale)
 
-    if adc_sample_read > VOLTAGE_ADC_CEILING and adc_sample_scale == HIGH_IMPEDANCE:
+    if adc_sample_read > VOLT_ADC_CEILING and adc_sample_scale == HIGH_IMPEDANCE:
         logging.debug(DBG_OPEN_CIRCUIT)
         return DBG_OPEN_CIRCUIT
     elif adc_sample_read < VOLTAGE_ADC_FLOOR and adc_sample_scale == LOW_IMPEDANCE:
         logging.debug(DBG_SHORT_CIRCUIT)
         return DBG_SHORT_CIRCUIT
-    else:
-        resistor_value = adc_voltage_conversion(adc_sample_read=adc_sample_read)
-        return resistor_value, adc_sample_scale
+    resistor_value = adc_voltage_conversion(adc_sample_read=adc_sample_read)
+    return resistor_value, adc_sample_scale
