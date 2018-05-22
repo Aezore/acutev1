@@ -4,10 +4,11 @@ import random
 import msgpack
 import numpy
 
-from peewee import SqliteDatabase, Model, CharField, IntegerField, BlobField, ForeignKeyField
+from peewee import (SqliteDatabase, Model, CharField, IntegerField, BlobField,
+                    ForeignKeyField, PeeweeException)
 from colorama import Style
 
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.CRITICAL,
                     format=Style.BRIGHT + "%(asctime)s - %(levelname)s - %(message)s" +
                     Style.NORMAL)
 
@@ -21,26 +22,25 @@ COMPLIANT = [1]
 ###############################################
 
 
-class EcuType(Model):
+class BaseModel(Model):
+    """ BASE MODEL """
+    class Meta:
+        """ META DATA FOR DB IDENTIFIER """
+        database = DB
+
+
+class EcuType(BaseModel):
     """ ECU TYPE MODEL CLASS """
     ecu_name = CharField()
     ecu_pincount = IntegerField()
 
-    class Meta:
-        """ META CLASS """
-        database = DB
 
-
-class PinData(Model):
+class PinData(BaseModel):
     """ PIN DATA MODEL CLASS """
     ecu_name = ForeignKeyField(EcuType, backref="ecu")
     ecu_ref_number = CharField()
     ecu_db_number = IntegerField()
     pin_reading_msgpack = BlobField()
-
-    class Meta:
-        """ META CLASS """
-        database = DB
 
 #################################################
 # FUNCTIONS DEFINITION
@@ -51,9 +51,10 @@ def uix_input():
     """ TEST ROUTINE MANUAL INPUT """
     name = input("Nombre?: ")
     pincount = input("Pincount?: ")
+    pincount_ = int(pincount)
 
-    create_ecu(name=name, pincount=pincount)
-    new_profile(name, pincount)
+    create_ecu(name=name, pincount=pincount_)
+    new_profile(name, pincount_)
 
 
 def create_ecu(name, pincount):
@@ -151,13 +152,13 @@ def init_db():
     try:
         DB.connect()
         # logging.DEBUG("Database connection OK")
-    except Exception as err:
+    except PeeweeException as err:
         print(err)
         # logging.DEBUG("Database connection ERROR")
 
     try:
         DB.create_tables([EcuType, PinData])
         # logging.DEBUG("Database tables created")
-    except Exception as err:
+    except PeeweeException as err:
         print(err)
         # logging.CRITICAL("Database tables creation ERROR")
